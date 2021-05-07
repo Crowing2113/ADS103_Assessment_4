@@ -3,6 +3,8 @@
 #include <string>
 #include <SDL.h>
 #include <SDL_image.h>
+#include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,7 +25,8 @@ enum class PlayerType
 struct Player {
 	PlayerType playerType;
 	char type;
-	Move currMove;
+	string name;
+
 };
 
 class Gameboard
@@ -34,7 +37,7 @@ public:
 	static char NAUGHT;
 
 	SDL_Renderer* renderer;
-	SDL_Texture* blank, * cross, * naught;
+	SDL_Texture* blank, * cross, * naught, * crossTurn, * naughtTurn;
 
 	Player p1, p2;
 
@@ -42,18 +45,24 @@ public:
 	int boardX = 250, boardY = 150;//X and Y offset of where there gameboard is
 	int tileSize = 100;
 
-	
-	Gameboard(SDL_Renderer* renderer,PlayerType p1Type, PlayerType p2Type);
+
+	Gameboard(SDL_Renderer* renderer, PlayerType p1Type, PlayerType p2Type);
 	~Gameboard();
 
 	void clearBoard();
-	void makeMove(Move move,Player p);
 	void makeAllNaught();
 	void makeAllCross();
+	bool makeMove(Move move, Player p);
 	bool isValidMove(Move move);
 	bool checkFullBoard();
-	bool checkWin(Player p);
+	bool checkWin(Player& p);
 
-	void draw();
+	void draw(SDL_Texture* texture, SDL_Window* window);
+
+	//MINIMAX Algorithm
+	int evaluate(Player& p, Player& o);
+	int minimax(int depth, bool isMax, Player& p, Player& o);
+	int minimax(int depth, bool isMax, Player& p, Player& o, int alpha, int beta);
+	Move findBestMove(char type,Player& p, Player& o);
 };
 
