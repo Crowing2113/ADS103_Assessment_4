@@ -4,11 +4,12 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <Windows.h>
+#include <vector>
 #include "Gameboard.h"
 #include "Textbox.h"
 using namespace std;
 
-static int compWins;
+static int compVsPlayer, compVsComp;
 static Player* oPlayer = nullptr;
 static Player* cPlayer = nullptr;
 PlayerType p1Type, p2Type;
@@ -22,7 +23,98 @@ enum MenuChoices
 	SCORES,
 	QUIT
 };
+/*
+//fuinction to check if a player already exists
+bool alreadyExists(string* name) {
 
+}
+*/
+/*
+void GetPlayerNames(string* name1, string* name2,bool onePlayer) {
+
+	// TODO:
+	//  get the players to input a name
+	string name;
+	if (onePlayer) {
+		cout << "Player 1 please enter your name >> ";
+		cin >> *name1;
+		if (alreadyExists(name1)) {
+			//do something
+		}
+	}
+	else {
+		cout << "Player 2, Please enter your name >> ";
+		cin >> *name2;
+		//check if the entered name in the players text file
+		if(alreadyExists(name2)){
+		//do something
+		}
+	}
+}
+*/
+
+//Display a list of player names
+// ask the players to "log in" as one of them or create a new one
+void displayPlayerList(string *pName) {
+	system("cls");//clear the screen before showing this
+	ifstream playersFI("playerList.txt"); // gettign the file that contains the player list
+	vector<string> playerList; //a string vector to hold the players in
+	if (playersFI.is_open()) {//check if the playerList.txt exists
+		while (!playersFI.eof()) { //go through the file until you reach the end
+			//store the name in a temp string variable and then add it to the vector
+			string temp;
+			playersFI >> temp;
+			if(temp != "")
+				playerList.push_back(temp);
+		}
+		//should sort the vector in alphabetical order
+		sort(playerList.begin(), playerList.end());
+		for (string p : playerList) {//go through and display them all
+			cout << p << endl;
+		}
+		cout << "Pick a name or create a new one." << endl;
+	}
+	else {//if the file doesn't exist then ask player to create a new "Profile"
+		cout << "Create a new profile. Enter your name" << endl;
+	}
+	playersFI.close();
+	string name;
+	cout << ">";
+	cin >> name;
+	bool nameFound = false;
+	for (int i = 0; i < playerList.size(); i++) {
+		if (name == playerList[i]) {
+			cout << "you have chosen " << name << endl;
+			nameFound = true;
+			break;
+		}
+	}
+
+	if (!nameFound) {
+		playerList.push_back(name);
+		cout << name << " added to playerList" << endl;
+	}
+	ofstream playerFO("playerList.txt");
+	for (string p : playerList) {
+		playerFO << p << endl;
+	}
+	playerFO.close();
+	*pName = name;
+	system("pause");
+	system("cls");
+}
+//checks if the players are human or computer
+void GetPlayerNames(string *p1name, string *p2name, PlayerType p1type, PlayerType p2type) {
+	if (p1type == PlayerType::HUMAN)
+		displayPlayerList(p1name);
+	else
+		*p1name = "AI_1";
+
+	if (p2type == PlayerType::HUMAN)
+		displayPlayerList(p1name);
+	else
+		*p2name = "AI_2";
+}
 //DO THIS STILL
 void displayHowToPlay() {
 	/*TESTING SDL TEXT*/
@@ -47,18 +139,22 @@ void displayHowToPlay() {
 
 	Textbox textbox;
 	textbox.setup(renderer);
-	
-	textbox.SetText("================================How to Play================================\n\n\tTaking turns placing either a Naught or Cross on a tile\n\tYou choose your move by entering a number between 1 and 9 inclusive\n\tPositions are displayed below\n\tBelow the board is the turn indicator\n\t\t\tBoard Layout:\n\n\t\t\t   |   |   \n\t\t\t 7 | 8 | 9 \n\t\t\t---|---|---\n\t\t\t 4 | 5 | 6 \n\t\t\t---|---|---\n\t\t\t 1 | 2 | 3 \n\t\t\t   |   |   \n\t\t\t     X\n", window);
-	//textbox.SetText("yes", window);
+	//easier to layout what it will look like
+	string testT;
+	testT = "================================How to Play================================";
+	testT += " Taking turns placing either a Naught or Cross on a tile                   ";
+	testT += " You choose your move by entering a number between 1 and 9 inclusive       ";
+	testT += " Below the board is the turn indicator                                     ";
+	testT += " Board Layout";
+	//setting the above text
+	textbox.SetText(testT, window, 700);
 	textbox.isVisible = true;
-	
+
 	textbox.draw();
 
 	while (display) {
 		SDL_Event e;
 		while (SDL_PollEvent(&e) != 0) {
-			//int curr = SDL_PollEvent(&e);
-			//cout << "poll event" << curr << endl;
 			//if the type of event was a key press then check what key was pressed
 			if (e.type == SDL_KEYDOWN) {
 				//if enter key was pressed then clear the board
@@ -69,6 +165,8 @@ void displayHowToPlay() {
 				}
 			}
 		}
+
+
 		SDL_RenderPresent(renderer);
 		/*ENDING SDL TEXT*/
 
@@ -95,8 +193,12 @@ void displayHowToPlay() {
 		*/
 	}
 }
-
-void gameLoop() {
+//Display the scores
+void displayScores(int compVsPlayer, int compVsComp) {
+	
+}
+//The Game Loop
+void gameLoop(string p1Name, string p2Name) {
 
 	//create window
 	SDL_Window* window = SDL_CreateWindow("TicTacToe", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
@@ -118,8 +220,8 @@ void gameLoop() {
 
 	Gameboard gameBoard(renderer, p1Type, p2Type);
 	bool gameQuit = false;
-	gameBoard.p1.name = "Joe";
-	gameBoard.p2.name = "Fred";
+	gameBoard.p1.name = p1Name;
+	gameBoard.p2.name = p2Name;
 
 	//bool pOneTurn = true;
 	bool moved = false;
@@ -217,7 +319,7 @@ void gameLoop() {
 						break;
 					}
 					moved = gameBoard.makeMove(tileMove, *cPlayer);
-					
+
 
 				}
 			}
@@ -240,9 +342,15 @@ void gameLoop() {
 		Sleep(200);
 
 		if (moved) {
+			//check if the current player has won
 			if (gameBoard.checkWin(*cPlayer)) {
+				//check if the current player is human or computer
 				if (cPlayer->playerType == PlayerType::COMPUTER)
-					compWins++;
+					//check if the opposing player is human
+					if (oPlayer->playerType == PlayerType::HUMAN) 
+						compVsPlayer++;//increase the comp versus player tally
+					else
+						compVsComp++;//increase the comp vs comp tally (this should always be 0
 				cout << "Player " << cPlayer->name << " wins" << endl;
 				gameQuit = true;
 				break;
@@ -267,14 +375,15 @@ void gameLoop() {
 	}
 	ofstream oFile;
 	oFile.open("comScore.txt");
-	oFile << compWins;
+	oFile << compVsPlayer;
+	oFile << compVsComp;
 	oFile.close();
 	SDL_DestroyWindow(window);
 	system("pause");
 	system("cls");
 
 }
-
+//Main
 int main(int argc, char** arbv) {
 
 	//TODO: save to file comp wins v player and comp wins v comp
@@ -284,10 +393,17 @@ int main(int argc, char** arbv) {
 	//								stats such as name and wins
 	//		ask player for name before game start
 	//		if that player already exists then let them know else create a new player
-
+	string p1Name, p2Name;
 	ifstream inFile;
 	inFile.open("comScore.txt");
-	inFile >> compWins;
+	if (inFile.is_open()) {
+		inFile >> compVsPlayer;
+		inFile >> compVsComp;
+	}
+	else {
+		compVsPlayer = 0;
+		compVsComp = 0;
+	}
 	//check if SDL initialises
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		cout << "Error: " << SDL_GetError() << endl;
@@ -304,7 +420,7 @@ int main(int argc, char** arbv) {
 	while (!quit) {
 		int choice;
 		bool play = false;
-
+		
 		//displays the different game modes
 		cout << "============Welcome to Tic Tac Toe============" << endl;
 		cout << "\tPlease choose an option:" << endl << endl;
@@ -333,18 +449,22 @@ int main(int argc, char** arbv) {
 			case PLAYER_VS_PLAYER: //if the player chose option 1 - player vs player
 				p1Type = PlayerType::HUMAN;
 				p2Type = PlayerType::HUMAN;
+				//get the players to enter their names
+				
 				cout << "You have chosen Player vs Player" << endl;
 				play = true;
 				break;
 			case PLAYER_VS_COMPUTER: //if the player chose option 2 - player vs computer
 				p1Type = PlayerType::HUMAN;
 				p2Type = PlayerType::COMPUTER;
+				//get player to enter their name
 				cout << "You have chosen Player vs Computer" << endl;
 				play = true;
 				break;
 			case COMPUTER_VS_COMPUTER://if the player chose option 3 - computer vs computer
 				p1Type = PlayerType::COMPUTER;
 				p2Type = PlayerType::COMPUTER;
+				//names will be kept as default
 				cout << "You have chosen Computer vs Computer" << endl;
 				play = true;
 				break;
@@ -352,7 +472,7 @@ int main(int argc, char** arbv) {
 				displayHowToPlay();
 				break;
 			case SCORES:
-				//displayScores();
+				displayScores(compVsPlayer,compVsComp);
 				system("cls");
 				break;
 			case QUIT://if the player chose option 5 - Quit
@@ -360,13 +480,15 @@ int main(int argc, char** arbv) {
 				quit = true;
 				break;
 			}
-		} else {
+		}
+		else {
 			cout << "Please choose a valid number...try again" << endl;
 			system("pause");
 			system("cls");
 		}
 		if (play) {
-			gameLoop();
+			GetPlayerNames(&p1Name, &p2Name, p1Type, p2Type);
+			gameLoop(p1Name,p2Name);
 			play = false;
 		}
 	}

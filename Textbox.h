@@ -24,7 +24,7 @@ public:
 	~Textbox();
 
 	void setup(SDL_Renderer* renderer);
-	void SetText(string text, SDL_Window* window);
+	void SetText(string text, SDL_Window* window, Uint32 wrapping);
 	void draw();
 };
 

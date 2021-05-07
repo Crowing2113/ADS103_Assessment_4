@@ -5,6 +5,7 @@
 #include <SDL_image.h>
 #include <cmath>
 #include <algorithm>
+#include "Textbox.h"
 
 using namespace std;
 
@@ -41,6 +42,7 @@ public:
 
 	Player p1, p2;
 
+	Textbox p1disp, p2disp;
 	char board[3][3];//3 x 3 array representing board
 	int boardX = 250, boardY = 150;//X and Y offset of where there gameboard is
 	int tileSize = 100;
