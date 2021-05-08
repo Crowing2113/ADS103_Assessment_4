@@ -1,8 +1,10 @@
 #include <iostream>
-#include <fstream>;
+#include <fstream>
 #include <string>
+#include <stdlib.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <time.h>
 #include <Windows.h>
 #include <vector>
 #include <chrono>
@@ -53,6 +55,8 @@ SDL_Texture* SetTimerTexture(int timer) {
 		return nine;
 	case 10:
 		return ten;
+	default:
+		return zero;
 	}
 }
 //Display a list of player names
@@ -110,12 +114,11 @@ void GetPlayerNames(string *p1name, string *p2name, PlayerType p1type, PlayerTyp
 	if (p1type == PlayerType::HUMAN)
 		displayPlayerList(p1name);
 	else
-		*p1name = "AI_1";
-
+		*p1name = "AI 1";
 	if (p2type == PlayerType::HUMAN)
 		displayPlayerList(p2name);
 	else
-		*p2name = "AI_2";
+		*p2name = "AI 2";
 }
 //Display the How to Play screen
 void displayHowToPlay() {
@@ -147,6 +150,7 @@ void displayHowToPlay() {
 	testT += " Take turns placing either a Naught or Cross on a tile                     ";
 	testT += " Be the first to make 3 in a line of your own syumbol to win               ";
 	testT += " You choose your move by entering a number between 1 and 9 inclusive       ";
+	testT += " Make your move before the timer runs out otherwise you will lose the game ";
 	testT += " Press 'R' at anytime during the game to restart                           ";
 	testT += " Hit Escape to quit and return to the main menu                            ";
 	testT += " Below the board is the turn indicator                                     ";
@@ -164,18 +168,19 @@ void displayHowToPlay() {
 	SDL_GetWindowSize(window, &sWidth, &sHeight);
 
 	drawRect.x = (sWidth / 2) - 150;
-	drawRect.y = sHeight/2 - 75;
+	drawRect.y = sHeight/2 - 50;
 	drawRect.w = 300;
 	drawRect.h = 300;
 
 	SDL_RenderCopy(renderer, boardLayoutTex, NULL, &drawRect);
 	while (display) {
+		SDL_RaiseWindow(window);
 		SDL_Event e;
 		while (SDL_PollEvent(&e) != 0) {
 			//if the type of event was a key press then check what key was pressed
 			if (e.type == SDL_KEYDOWN) {
 				//if enter key was pressed then clear the board
-				if (e.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+				if (e.key.keysym.scancode == SDL_SCANCODE_RETURN|| e.key.keysym.scancode == SDL_SCANCODE_KP_ENTER|| e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					SDL_DestroyWindow(window);
 					system("cls");
 					display = false;
@@ -188,7 +193,7 @@ void displayHowToPlay() {
 //Display the scores
 void displayScores(int compVsPlayer, int compVsComp) {
 	//create window
-	SDL_Window* window = SDL_CreateWindow("Scores", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 600, 600, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Scores", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 350,100, SDL_WINDOW_SHOWN);
 	//if it couldn't create the window for some reason then quit
 	if (window == NULL) {
 		cout << "Error: " << SDL_GetError() << endl;
@@ -208,26 +213,27 @@ void displayScores(int compVsPlayer, int compVsComp) {
 	Textbox cvc;
 	cvc.setup(renderer);
 	cvc.isVisible = true;
-	string text = "Computer wins vs Player: " + to_string(compVsPlayer);
-	text += " Computer wins vs Computer: " + to_string(compVsComp);
-	cvc.SetText(text, window, 350);
+	string text = "Computer wins vs Player >    " + to_string(compVsPlayer);
+	text += " Computer wins vs Computer >  " + to_string(compVsComp);
+	SDL_Color tColor;
+	tColor = {255,255,255,255};
+	cvc.SetText(text, window, 350, tColor);
+	cvc.boxRect = { 0,0,0,0 };
 	SDL_Event e;
 	while (displaying) {
+		SDL_RaiseWindow(window);
 		while (SDL_PollEvent(&e)) {
 			if (e.type == SDL_KEYDOWN) {
-				if (e.key.keysym.scancode == SDL_SCANCODE_RETURN || e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+				if (e.key.keysym.scancode == SDL_SCANCODE_RETURN || e.key.keysym.scancode == SDL_SCANCODE_KP_ENTER || e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					displaying = false;
 					SDL_DestroyWindow(window);
 					return;
 				}
 			}
 		}
-
 		cvc.draw();
 		SDL_RenderPresent(renderer);
 	}
-	//OPTIONAL:
-	// 	display player names and their scores
 }
 
 //The Game Loop
@@ -269,6 +275,24 @@ void gameLoop(string p1Name, string p2Name) {
 	bool gameQuit = false;
 	gameBoard.p1.name = p1Name;
 	gameBoard.p2.name = p2Name;
+	int sWidth = 0;
+	int sHeight = 0;
+	SDL_GetWindowSize(window, &sWidth, &sHeight);
+
+	string nvn = gameBoard.p1.name +" vs " + gameBoard.p2.name;
+	Textbox nameVsName;
+	nameVsName.setup(renderer);
+	nameVsName.SetText(nvn,window,300);
+	//setting the boxRect's elements to 0 so we only see the text
+	nameVsName.boxRect.x = 0;
+	nameVsName.boxRect.y = 0;
+	nameVsName.boxRect.w = 0;
+	nameVsName.boxRect.h = 0;
+	nameVsName.textRect.x = (sWidth / 2) - 150;
+	nameVsName.textRect.y = 50;
+	nameVsName.textRect.h = 50;
+	nameVsName.textRect.w = 300;
+
 
 	//bool pOneTurn = true;
 	bool moved = false;
@@ -278,11 +302,12 @@ void gameLoop(string p1Name, string p2Name) {
 	steady_clock::time_point startTime = steady_clock::now();
 	//game loop
 	while (!gameQuit) {
+		//focus the game window
+		SDL_RaiseWindow(window);
 		if (oPlayer == nullptr || cPlayer == nullptr) {
 			cout << "oPlayer or cPlayer is not set" << endl;
 			return;
 		}
-		int tile;
 		Move tileMove = Move();
 
 		SDL_Event e;
@@ -291,6 +316,10 @@ void gameLoop(string p1Name, string p2Name) {
 		bool restarted = false;
 		//if the current playerType is to COMPUTER then ai will move
 		if (cPlayer->playerType == PlayerType::COMPUTER) {
+			//sleep so that the computer player takes time to make a move
+			//generate a random sleepTime to make it seem like the COmputer player is thinking
+			int sleepTime = (rand() % 500)+500;
+			Sleep(sleepTime);
 			Move aiMove = gameBoard.findBestMove(cPlayer->type, *cPlayer, *oPlayer);
 			if (aiMove.xCoord != -1 && aiMove.yCoord != -1) {
 				moved = gameBoard.makeMove(aiMove, *cPlayer);
@@ -381,7 +410,7 @@ void gameLoop(string p1Name, string p2Name) {
 				}
 			}
 		}
-		SDL_Texture* timerTexture;
+		SDL_Texture* timerTexture = NULL;
 		//get the current time
 		steady_clock::time_point curTime = steady_clock::now();
 		//get the difference between the curTime and startTime
@@ -392,17 +421,14 @@ void gameLoop(string p1Name, string p2Name) {
 		//set the background color of the window
 		SDL_SetRenderDrawColor(renderer, 100, 170, 170, 255);
 		SDL_RenderClear(renderer);
+		//Create the temp texture to store the turn display texture in
 		SDL_Texture* tempTex;
-		if (cPlayer->type == gameBoard.CROSS) {
+		if (cPlayer->type == gameBoard.CROSS)
 			tempTex = gameBoard.crossTurn;
-		}
-		else {
+		else 
 			tempTex = gameBoard.naughtTurn;
-		}
-
 		//draw player names to the screen above the gameboard
-
-
+		nameVsName.draw();
 		gameBoard.draw(tempTex, window);
 		//draw turn symbol
 		SDL_Rect turnRect;
@@ -426,11 +452,9 @@ void gameLoop(string p1Name, string p2Name) {
 
 		SDL_RenderCopy(renderer, timerTexture, NULL, &timeRect);
 
-
 		//swap buffers
 		SDL_RenderPresent(renderer);
-		//sleep so that the computer player takes time to make a move
-		Sleep(200);
+
 
 		if (moved) {
 			//check if the current player has won
@@ -491,14 +515,10 @@ void gameLoop(string p1Name, string p2Name) {
 }
 //Main
 int main(int argc, char** arbv) {
-
-	//TODO:
-	//1.			when reading from file read first to string then int
-	//		save player in a file that reads as "NAME  NUMBER" 
-	//								stats such as name and wins
 	string p1Name, p2Name;
 	ifstream inFile;
-
+	int seed = time(NULL);
+	srand(seed);
 	inFile.open("comScore.txt");
 	if (inFile.is_open()) {
 		inFile >> compVsPlayer;

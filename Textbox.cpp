@@ -18,7 +18,7 @@ void Textbox::setup(SDL_Renderer* renderer)
 	this->renderer = renderer;
 }
 
-void Textbox::SetText(string text,SDL_Window* window,Uint32 wrapping )
+void Textbox::SetText(string text, SDL_Window* window, Uint32 wrapping, SDL_Color tColor)
 {
 	//if the entered text is not the same as the currently set text and the text is not an empty string
 	if (this->text != text && text != "") {
@@ -29,7 +29,7 @@ void Textbox::SetText(string text,SDL_Window* window,Uint32 wrapping )
 		int screenW, screenH;
 		SDL_GetWindowSize(window, &screenW, &screenH);
 		//build text texture using font and text string
-		SDL_Color textColor = {0,0,0,0};
+		SDL_Color textColor = tColor;
 		//create a surface out of the text
 		SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text.c_str(), textColor,wrapping);
 		//convert the surface to a texture
@@ -38,6 +38,7 @@ void Textbox::SetText(string text,SDL_Window* window,Uint32 wrapping )
 		SDL_FreeSurface(textSurface);
 		//get the width and height of the texture
 		SDL_QueryTexture(textTexture, NULL, NULL, &textRect.w, &textRect.h);
+		//these can be changed after setting text
 		textRect.x = 10;
 		textRect.y = 10;
 		
@@ -46,7 +47,6 @@ void Textbox::SetText(string text,SDL_Window* window,Uint32 wrapping )
 		boxRect.y = textRect.y - 2;
 		boxRect.w = textRect.w +2 ;
 		boxRect.h = textRect.h+2;
-
 	}
 }
 
