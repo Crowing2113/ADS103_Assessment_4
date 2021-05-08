@@ -16,6 +16,7 @@ static Player* oPlayer = nullptr;
 static Player* cPlayer = nullptr;
 PlayerType p1Type, p2Type;
 SDL_Texture* zero, * one, * two, * three, * four, * five, * six, * seven, * eight, * nine,* ten;
+SDL_Texture* boardLayoutTex;
 
 enum MenuChoices
 {
@@ -27,7 +28,7 @@ enum MenuChoices
 	QUIT
 };
 
-
+//Setting the timer texture in a switch function
 SDL_Texture* SetTimerTexture(int timer) {
 	switch (timer) {
 	case 0:
@@ -104,7 +105,7 @@ void displayPlayerList(string *pName) {
 	system("pause");
 	system("cls");
 }
-//checks if the players are human or computer
+//checks if the players are human , if they are call the displayPlayerList function otherwise set the name to AI
 void GetPlayerNames(string *p1name, string *p2name, PlayerType p1type, PlayerType p2type) {
 	if (p1type == PlayerType::HUMAN)
 		displayPlayerList(p1name);
@@ -116,7 +117,7 @@ void GetPlayerNames(string *p1name, string *p2name, PlayerType p1type, PlayerTyp
 	else
 		*p2name = "AI_2";
 }
-//DO THIS STILL
+//Display the How to Play screen
 void displayHowToPlay() {
 	/*TESTING SDL TEXT*/
 	//create window
@@ -129,7 +130,7 @@ void displayHowToPlay() {
 	}
 	//create the renderer
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-	//if there was en error creating the renderer then quit
+	//if there was an error creating the renderer then quit
 	if (renderer == NULL) {
 		cout << "Error: " << SDL_GetError() << endl;
 		SDL_DestroyWindow(window);
@@ -143,8 +144,11 @@ void displayHowToPlay() {
 	//easier to layout what it will look like
 	string testT;
 	testT = "================================How to Play================================";
-	testT += " Taking turns placing either a Naught or Cross on a tile                   ";
+	testT += " Take turns placing either a Naught or Cross on a tile                     ";
+	testT += " Be the first to make 3 in a line of your own syumbol to win               ";
 	testT += " You choose your move by entering a number between 1 and 9 inclusive       ";
+	testT += " Press 'R' at anytime during the game to restart                           ";
+	testT += " Hit Escape to quit and return to the main menu                            ";
 	testT += " Below the board is the turn indicator                                     ";
 	testT += " Board Layout";
 	//setting the above text
@@ -152,7 +156,19 @@ void displayHowToPlay() {
 	textbox.isVisible = true;
 
 	textbox.draw();
+	//loading the texture for the board layout
+	boardLayoutTex = IMG_LoadTexture(renderer, "assets/boardLayout.png");
+	SDL_Rect drawRect;
+	int sWidth = 0;
+	int sHeight = 0;
+	SDL_GetWindowSize(window, &sWidth, &sHeight);
 
+	drawRect.x = (sWidth / 2) - 150;
+	drawRect.y = sHeight/2 - 75;
+	drawRect.w = 300;
+	drawRect.h = 300;
+
+	SDL_RenderCopy(renderer, boardLayoutTex, NULL, &drawRect);
 	while (display) {
 		SDL_Event e;
 		while (SDL_PollEvent(&e) != 0) {
@@ -166,40 +182,11 @@ void displayHowToPlay() {
 				}
 			}
 		}
-
-
 		SDL_RenderPresent(renderer);
-		/*ENDING SDL TEXT*/
-
-
-
-	/*
-		system("cls");
-		cout << "================================How to Play================================" << endl << endl;
-		cout << "\tTaking turns placing either a Naught or Cross on a tile" << endl;
-		cout << "\tYou choose your move by entering a number between 1 and 9 inclusive" << endl;
-		cout << "\tPositions are displayed below" << endl;
-		cout << "\tBelow the board is the turn indicator" << endl;
-		cout << "\t\t\tBoard Layout:" << endl << endl;
-		cout << "\t\t\t   |   |   " << endl;
-		cout << "\t\t\t 7 | 8 | 9 " << endl;
-		cout << "\t\t\t---|---|---" << endl;
-		cout << "\t\t\t 4 | 5 | 6 " << endl;
-		cout << "\t\t\t---|---|---" << endl;
-		cout << "\t\t\t 1 | 2 | 3 " << endl;
-		cout << "\t\t\t   |   |   " << endl << endl;
-		cout << "\t\t\t     X" << endl;
-		//system("pause");
-		//system("cls");
-		*/
 	}
 }
 //Display the scores
 void displayScores(int compVsPlayer, int compVsComp) {
-	//TODO
-	// display compVsPlayer scores
-	//then display compVsComp scores
-
 	//create window
 	SDL_Window* window = SDL_CreateWindow("Scores", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 600, 600, SDL_WINDOW_SHOWN);
 	//if it couldn't create the window for some reason then quit
@@ -221,7 +208,6 @@ void displayScores(int compVsPlayer, int compVsComp) {
 	Textbox cvc;
 	cvc.setup(renderer);
 	cvc.isVisible = true;
-	
 	string text = "Computer wins vs Player: " + to_string(compVsPlayer);
 	text += " Computer wins vs Computer: " + to_string(compVsComp);
 	cvc.SetText(text, window, 350);
@@ -264,7 +250,7 @@ void gameLoop(string p1Name, string p2Name) {
 		system("pause");
 		return;
 	}
-	
+
 	//set all the number textures
 	zero = IMG_LoadTexture(renderer, "assets/0.png");
 	one = IMG_LoadTexture(renderer, "assets/1.png");
@@ -302,7 +288,7 @@ void gameLoop(string p1Name, string p2Name) {
 		SDL_Event e;
 		//create and set the countdown timer to be subtracted from later
 		int countdownTimer = 10;
-
+		bool restarted = false;
 		//if the current playerType is to COMPUTER then ai will move
 		if (cPlayer->playerType == PlayerType::COMPUTER) {
 			Move aiMove = gameBoard.findBestMove(cPlayer->type, *cPlayer, *oPlayer);
@@ -332,6 +318,13 @@ void gameLoop(string p1Name, string p2Name) {
 					//switch statement to set the tileMove variable to a specific Move coord
 					switch (e.key.keysym.scancode)
 					{
+					case SDL_SCANCODE_R:
+						gameBoard.clearBoard();
+						cPlayer = &gameBoard.p1;
+						oPlayer = &gameBoard.p2;
+						startTime = steady_clock::now();
+						restarted = true;
+						break;
 					case SDL_SCANCODE_KP_1:
 						//set move to [0,2]
 						tileMove.xCoord = 0;
@@ -383,7 +376,8 @@ void gameLoop(string p1Name, string p2Name) {
 						tileMove.yCoord = -1;
 						break;
 					}
-					moved = gameBoard.makeMove(tileMove, *cPlayer);
+					if(!restarted)
+						moved = gameBoard.makeMove(tileMove, *cPlayer);
 				}
 			}
 		}
@@ -504,6 +498,7 @@ int main(int argc, char** arbv) {
 	//								stats such as name and wins
 	string p1Name, p2Name;
 	ifstream inFile;
+
 	inFile.open("comScore.txt");
 	if (inFile.is_open()) {
 		inFile >> compVsPlayer;

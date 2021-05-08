@@ -54,7 +54,7 @@ void Textbox::draw()
 {
 	if (isVisible && textTexture != NULL && text != "") {
 		//draw box
-		SDL_SetRenderDrawColor(renderer, 0, 0,255, 255);
+		SDL_SetRenderDrawColor(renderer, 23, 121,53, 255);
 		SDL_RenderFillRect(renderer, &boxRect);
 
 		//draw the border

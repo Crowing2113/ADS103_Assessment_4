@@ -180,10 +180,6 @@ int Gameboard::minimax(int depth, bool isMax, Player& p, Player& o)
 	}
 }
 
-int Gameboard::minimax(int depth, bool isMax, Player& p, Player& o, int alpha, int beta)
-{
-	return 0;
-}
 
 Move Gameboard::findBestMove(char type,Player& p,Player& o)
 {
