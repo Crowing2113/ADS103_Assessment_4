@@ -85,7 +85,7 @@ bool Gameboard::checkFullBoard()
 		for (int y = 0; y < 3; y++)
 			if (board[x][y] == BLANK)
 				return false;
-
+	
 	return true;
 }
 
@@ -120,8 +120,8 @@ bool Gameboard::checkWin(Player& p)
 	return false;
 }
 
-//player is maximiser
-//opponent is minimiser
+//current player is maximiser
+//opposing player is minimiser
 //these should work with AI vs AI
 int Gameboard::evaluate(Player& p, Player& o)
 {
@@ -153,9 +153,9 @@ int Gameboard::minimax(int depth, bool isMax, Player& p, Player& o)
 				if (board[x][y] == BLANK) {
 					//make move
 					board[x][y] = p.type;
-					//call minimax
+					//call minimax recursively 
 					best = max(best, minimax(depth++, !isMax, p, o));
-					//Undo move
+					//Undo move so they don't show on the board
 					board[x][y] = BLANK;
 				}
 			}
@@ -224,36 +224,29 @@ Move Gameboard::findBestMove(char type,Player& p,Player& o)
 	}
 	return bestMove;
 }
-
+//draw the gameboard to the screen
 void Gameboard::draw(SDL_Texture* texture, SDL_Window* window)
 {
+	//3 across
 	for (int x = 0; x < 3; x++)
 	{
+		//3 down
 		for (int y = 0; y < 3; y++)
 		{
+			//create the drawing rectangle
 			SDL_Rect drawRect;
 			drawRect.x = boardX + (x * tileSize);
 			drawRect.y = boardY + (y * tileSize);
 			drawRect.w = tileSize;
 			drawRect.h = tileSize;
-			SDL_Rect turnRect;
-			int sWidth = 0;
-			int sHeight = 0;
-			SDL_GetWindowSize(window, &sWidth, &sHeight);
-			turnRect.x = (sWidth / 2) - (tileSize / 2);
-			turnRect.y = sHeight - (sHeight / 4);
-			turnRect.w = tileSize;
-			turnRect.h = tileSize;
 
+			//check whether a tile is blank, a cross or naught
 			if (board[x][y] == BLANK)
 				SDL_RenderCopy(renderer, blank, NULL, &drawRect);
 			if (board[x][y] == CROSS)
 				SDL_RenderCopy(renderer, cross, NULL, &drawRect);
 			if (board[x][y] == NAUGHT)
 				SDL_RenderCopy(renderer, naught, NULL, &drawRect);
-
-			SDL_RenderCopy(renderer, texture, NULL, &turnRect);
-
 		}
 	}
 }

@@ -38,8 +38,8 @@ void Textbox::SetText(string text,SDL_Window* window,Uint32 wrapping )
 		SDL_FreeSurface(textSurface);
 		//get the width and height of the texture
 		SDL_QueryTexture(textTexture, NULL, NULL, &textRect.w, &textRect.h);
-		textRect.x = 0;
-		textRect.y = 0;
+		textRect.x = 10;
+		textRect.y = 10;
 		
 		//calculate the boxRectangle
 		boxRect.x = textRect.x - 4;
@@ -54,7 +54,7 @@ void Textbox::draw()
 {
 	if (isVisible && textTexture != NULL && text != "") {
 		//draw box
-		SDL_SetRenderDrawColor(renderer, 217, 43, 90, 255);
+		SDL_SetRenderDrawColor(renderer, 0, 0,255, 255);
 		SDL_RenderFillRect(renderer, &boxRect);
 
 		//draw the border

@@ -5,14 +5,17 @@
 #include <SDL_ttf.h>
 #include <Windows.h>
 #include <vector>
+#include <chrono>
 #include "Gameboard.h"
 #include "Textbox.h"
 using namespace std;
+using namespace std::chrono;
 
 static int compVsPlayer, compVsComp;
 static Player* oPlayer = nullptr;
 static Player* cPlayer = nullptr;
 PlayerType p1Type, p2Type;
+SDL_Texture* zero, * one, * two, * three, * four, * five, * six, * seven, * eight, * nine,* ten;
 
 enum MenuChoices
 {
@@ -23,36 +26,34 @@ enum MenuChoices
 	SCORES,
 	QUIT
 };
-/*
-//fuinction to check if a player already exists
-bool alreadyExists(string* name) {
 
-}
-*/
-/*
-void GetPlayerNames(string* name1, string* name2,bool onePlayer) {
 
-	// TODO:
-	//  get the players to input a name
-	string name;
-	if (onePlayer) {
-		cout << "Player 1 please enter your name >> ";
-		cin >> *name1;
-		if (alreadyExists(name1)) {
-			//do something
-		}
+SDL_Texture* SetTimerTexture(int timer) {
+	switch (timer) {
+	case 0:
+		return zero;
+	case 1:
+		return one;
+	case 2:
+		return two;
+	case 3:
+		return three;
+	case 4:
+		return  four;
+	case 5:
+		return five;
+	case 6:
+		return six;
+	case 7:
+		return seven;
+	case 8:
+		return eight;
+	case 9:
+		return nine;
+	case 10:
+		return ten;
 	}
-	else {
-		cout << "Player 2, Please enter your name >> ";
-		cin >> *name2;
-		//check if the entered name in the players text file
-		if(alreadyExists(name2)){
-		//do something
-		}
-	}
 }
-*/
-
 //Display a list of player names
 // ask the players to "log in" as one of them or create a new one
 void displayPlayerList(string *pName) {
@@ -111,7 +112,7 @@ void GetPlayerNames(string *p1name, string *p2name, PlayerType p1type, PlayerTyp
 		*p1name = "AI_1";
 
 	if (p2type == PlayerType::HUMAN)
-		displayPlayerList(p1name);
+		displayPlayerList(p2name);
 	else
 		*p2name = "AI_2";
 }
@@ -195,13 +196,12 @@ void displayHowToPlay() {
 }
 //Display the scores
 void displayScores(int compVsPlayer, int compVsComp) {
-	
-}
-//The Game Loop
-void gameLoop(string p1Name, string p2Name) {
+	//TODO
+	// display compVsPlayer scores
+	//then display compVsComp scores
 
 	//create window
-	SDL_Window* window = SDL_CreateWindow("TicTacToe", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Scores", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 600, 600, SDL_WINDOW_SHOWN);
 	//if it couldn't create the window for some reason then quit
 	if (window == NULL) {
 		cout << "Error: " << SDL_GetError() << endl;
@@ -217,6 +217,67 @@ void gameLoop(string p1Name, string p2Name) {
 		system("pause");
 		return;
 	}
+	bool displaying = true;
+	Textbox cvc;
+	cvc.setup(renderer);
+	cvc.isVisible = true;
+	
+	string text = "Computer wins vs Player: " + to_string(compVsPlayer);
+	text += " Computer wins vs Computer: " + to_string(compVsComp);
+	cvc.SetText(text, window, 350);
+	SDL_Event e;
+	while (displaying) {
+		while (SDL_PollEvent(&e)) {
+			if (e.type == SDL_KEYDOWN) {
+				if (e.key.keysym.scancode == SDL_SCANCODE_RETURN || e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+					displaying = false;
+					SDL_DestroyWindow(window);
+					return;
+				}
+			}
+		}
+
+		cvc.draw();
+		SDL_RenderPresent(renderer);
+	}
+	//OPTIONAL:
+	// 	display player names and their scores
+}
+
+//The Game Loop
+void gameLoop(string p1Name, string p2Name) {
+	system("cls");
+	//create window
+	SDL_Window* window = SDL_CreateWindow("TicTacToe", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_SHOWN);
+	//if it couldn't create the window for some reason then quit
+	if (window == NULL) {
+		cout << "Error: " << SDL_GetError() << endl;
+		system("pause");
+		return;
+	}
+	//create the renderer
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	//if there was en error creating the renderer then quit
+	if (renderer == NULL) {
+		cout << "Error: " << SDL_GetError() << endl;
+		SDL_DestroyWindow(window);
+		system("pause");
+		return;
+	}
+	
+	//set all the number textures
+	zero = IMG_LoadTexture(renderer, "assets/0.png");
+	one = IMG_LoadTexture(renderer, "assets/1.png");
+	two = IMG_LoadTexture(renderer, "assets/2.png");
+	three = IMG_LoadTexture(renderer, "assets/3.png");
+	four = IMG_LoadTexture(renderer, "assets/4.png");
+	five = IMG_LoadTexture(renderer, "assets/5.png");
+	six = IMG_LoadTexture(renderer, "assets/6.png");
+	seven = IMG_LoadTexture(renderer, "assets/7.png");
+	eight = IMG_LoadTexture(renderer, "assets/8.png");
+	nine = IMG_LoadTexture(renderer, "assets/9.png");
+	ten = IMG_LoadTexture(renderer, "assets/10.png");
+	
 
 	Gameboard gameBoard(renderer, p1Type, p2Type);
 	bool gameQuit = false;
@@ -227,6 +288,8 @@ void gameLoop(string p1Name, string p2Name) {
 	bool moved = false;
 	cPlayer = &gameBoard.p1;//the current player
 	oPlayer = &gameBoard.p2;//the opponent player
+	//get the current time as a start point
+	steady_clock::time_point startTime = steady_clock::now();
 	//game loop
 	while (!gameQuit) {
 		if (oPlayer == nullptr || cPlayer == nullptr) {
@@ -237,6 +300,9 @@ void gameLoop(string p1Name, string p2Name) {
 		Move tileMove = Move();
 
 		SDL_Event e;
+		//create and set the countdown timer to be subtracted from later
+		int countdownTimer = 10;
+
 		//if the current playerType is to COMPUTER then ai will move
 		if (cPlayer->playerType == PlayerType::COMPUTER) {
 			Move aiMove = gameBoard.findBestMove(cPlayer->type, *cPlayer, *oPlayer);
@@ -249,8 +315,6 @@ void gameLoop(string p1Name, string p2Name) {
 		else {
 			//go through the queue of events until there are none left
 			while (SDL_PollEvent(&e) != 0) {
-				//int curr = SDL_PollEvent(&e);
-				//cout << "poll event" << curr << endl;
 				//if the type of event was a key press then check what key was pressed
 				if (e.type == SDL_KEYDOWN) {
 					//if enter key was pressed then clear the board
@@ -314,16 +378,23 @@ void gameLoop(string p1Name, string p2Name) {
 						tileMove.yCoord = 0;
 						break;
 					default:
+						//if the key entered is not a valid move then set the tileMove to -1,-1
 						tileMove.xCoord = -1;
 						tileMove.yCoord = -1;
 						break;
 					}
 					moved = gameBoard.makeMove(tileMove, *cPlayer);
-
-
 				}
 			}
 		}
+		SDL_Texture* timerTexture;
+		//get the current time
+		steady_clock::time_point curTime = steady_clock::now();
+		//get the difference between the curTime and startTime
+		duration<float> timeElapsed = curTime - startTime;
+		//subtract timeElapsed from countdownTimer
+		countdownTimer -= timeElapsed.count();
+		timerTexture = SetTimerTexture(countdownTimer);
 		//set the background color of the window
 		SDL_SetRenderDrawColor(renderer, 100, 170, 170, 255);
 		SDL_RenderClear(renderer);
@@ -335,10 +406,36 @@ void gameLoop(string p1Name, string p2Name) {
 			tempTex = gameBoard.naughtTurn;
 		}
 
+		//draw player names to the screen above the gameboard
+
+
 		gameBoard.draw(tempTex, window);
+		//draw turn symbol
+		SDL_Rect turnRect;
+		int sWidth = 0;
+		int sHeight = 0;
+		SDL_GetWindowSize(window, &sWidth, &sHeight);
+
+		turnRect.x = (sWidth / 2) - (gameBoard.tileSize / 2);
+		turnRect.y = sHeight - (sHeight / 3);
+		turnRect.w = gameBoard.tileSize;
+		turnRect.h = gameBoard.tileSize;
+
+		SDL_RenderCopy(renderer, tempTex, NULL, &turnRect);
+		//draw timer underneath gameboard and turn symbol
+		
+		SDL_Rect timeRect;
+		timeRect.x = turnRect.x;
+		timeRect.y = turnRect.y + gameBoard.tileSize;
+		timeRect.w = gameBoard.tileSize;
+		timeRect.h = gameBoard.tileSize;
+
+		SDL_RenderCopy(renderer, timerTexture, NULL, &timeRect);
+
 
 		//swap buffers
 		SDL_RenderPresent(renderer);
+		//sleep so that the computer player takes time to make a move
 		Sleep(200);
 
 		if (moved) {
@@ -351,15 +448,16 @@ void gameLoop(string p1Name, string p2Name) {
 						compVsPlayer++;//increase the comp versus player tally
 					else
 						compVsComp++;//increase the comp vs comp tally (this should always be 0
-				cout << "Player " << cPlayer->name << " wins" << endl;
+				cout << "Player " << cPlayer->name << " has won!" << endl;
 				gameQuit = true;
 				break;
 			}
-			else if (gameBoard.checkFullBoard()) {
+			else if (gameBoard.checkFullBoard()) { //check if the board is full
 				cout << "No one has won. It's a draw :(" << endl;
 				gameQuit = true;
 				break;
 			}
+			//swap the current player and the opposing player
 			if (cPlayer->type == gameBoard.p1.type) {
 				cPlayer = &gameBoard.p2;
 				oPlayer = &gameBoard.p1;
@@ -369,14 +467,28 @@ void gameLoop(string p1Name, string p2Name) {
 				oPlayer = &gameBoard.p2;
 			}
 			moved = false;
+			//reset startTime
+			startTime = steady_clock::now();
+		}
+		if (countdownTimer <= 0) {
+			//check if the opposing player is a computer
+			if (oPlayer->playerType == PlayerType::COMPUTER)
+				//check if the current player is human
+				if (cPlayer->playerType == PlayerType::HUMAN)
+					compVsPlayer++;//increase the comp versus player tally
+				else
+					compVsComp++;//increase the comp vs comp tally (this will always be 0 due to the minimax algorithm)
+			cout << cPlayer->name << " has taken too long and lost." << endl;
+			cout << oPlayer->name << " wins the game." << endl;
+			gameQuit = true;
 		}
 
 
 	}
 	ofstream oFile;
-	oFile.open("comScore.txt");
-	oFile << compVsPlayer;
-	oFile << compVsComp;
+	oFile.open("comScore.txt",fstream::trunc);
+	oFile << compVsPlayer<<endl;
+	oFile << compVsComp<<endl;
 	oFile.close();
 	SDL_DestroyWindow(window);
 	system("pause");
@@ -386,13 +498,10 @@ void gameLoop(string p1Name, string p2Name) {
 //Main
 int main(int argc, char** arbv) {
 
-	//TODO: save to file comp wins v player and comp wins v comp
-	//		keep all players in a list read from file
-	//			when reading from file read first to string then int
+	//TODO:
+	//1.			when reading from file read first to string then int
 	//		save player in a file that reads as "NAME  NUMBER" 
 	//								stats such as name and wins
-	//		ask player for name before game start
-	//		if that player already exists then let them know else create a new player
 	string p1Name, p2Name;
 	ifstream inFile;
 	inFile.open("comScore.txt");
@@ -415,6 +524,7 @@ int main(int argc, char** arbv) {
 		system("pause");
 		return 1;
 	}
+	
 	bool quit = false;
 	//menu loop
 	while (!quit) {

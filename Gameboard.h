@@ -27,7 +27,6 @@ struct Player {
 	PlayerType playerType;
 	char type;
 	string name;
-
 };
 
 class Gameboard
